@@ -1,0 +1,255 @@
+<?php
+/**
+ * sample code module for Steve Zipfel <steve@webrepublic.ca>
+ * Purpose: Cnnects to a web service to pull in data for a custom form.
+ **/
+
+/**
+ *  Implements hook_permission().
+ */
+function sz_test_permission() {
+  return array(
+    'administer test module settings' => array(
+      'title' => t('Change test module settings'),
+    ),
+  );
+}
+
+/**
+ * @return array
+ */
+function sz_test_menu() {
+
+  $items = array();
+
+  $items['admin/config/sz_test/settings'] = array(
+    'title' => t('Steve Zipfel\'s sample administration page'),
+    'description' => t('Administer settings for SZ test module'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sz_test_admin_form'),
+    'access arguments' => array('administer Steve Zipfel\'s sample module settings'),
+    'file' => 'includes/sz_test.admin.inc',
+    'file path' => drupal_get_path('module', 'sz_test')
+  );
+
+
+  $items['vote'] = array(
+    'title' => t('Vote for Next Year\'s Event'),
+    'description' => t('Vote for next year\'s event form'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sz_test_vote_form'),
+    'access arguments' =>  array('access content')
+  );
+
+
+  $items['vote-result/%/%/%'] = array(
+    'title arguments' => array(1),
+    'title callback' => 'sz_test_vote_result_get_title',
+    'page callback' => 'sz_test_vote_result',
+    'page arguments' => array(1,2,3),
+    'access arguments' => array('access content'),
+    'access callback' => TRUE,
+  );
+
+
+  return $items;
+}
+
+function sz_test_vote_result_get_title($name) {
+
+  return t('Thank you for voting, @name!', array(
+    '@name' => $name
+  ));
+}
+
+/**
+ * Main vote form
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
+function sz_test_vote_form($form, &$form_state) {
+
+  //setup the webservice class to get the events and cities when required
+  include_once(drupal_get_path('module', 'sz_test') . '/tools/rest.php');
+  $web_service = new WebService();
+  $events = $web_service->get_events();
+  $access = FALSE;
+
+  $form['select_event'] = array(
+    '#type' => 'select',
+    '#title' => t('Select an event'),
+    //'#description' => t('Select an event'),
+    '#options' => $events,
+    '#ajax' => array(
+      'event'=>'change',
+      'callback' =>'sz_test_get_cities',
+      'wrapper' => 'form-wrapper',
+    ),
+    '#default_value' => t('Choose an event'),
+    '#required' => TRUE,
+  );
+
+
+  $form['ajax']['wrapper'] = array(
+    '#prefix' => '<div id="form-wrapper">',
+    '#suffix' => '</div>',
+  );
+
+  $cities = array(t('Choose a city'));
+  if (isset($form_state['values']['select_event'])) {
+    $cities = $web_service->get_cities($form_state['values']['select_event']);
+    $access = TRUE;
+  }
+
+  $form['ajax']['wrapper']['select_city'] = array(
+    '#title' => t('City'),
+    '#type' => 'select',
+    '#access' => $access,
+    '#options' => $cities,
+    '#default_value' => t('Choose a city'),
+    '#required' => TRUE,
+  );
+
+  $form['ajax']['wrapper']['voter_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Your name'),
+    '#access' => $access,
+    '#required' => TRUE,
+  );
+
+  $form['ajax']['wrapper']['voter_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Your email'),
+    '#access' => $access,
+    '#required' => TRUE,
+  );
+
+  $form['#validate'][] = 'sz_test_vote_form_validate';
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Vote'),
+    //'#disabled' => TRUE
+  );
+
+  return $form;
+}
+
+/**
+ * Updates the results database.
+ *
+ * @param $form
+ * @param $form_state
+ * @throws \Exception
+ */
+function sz_test_vote_form_submit($form, &$form_state) {
+
+  $form_state['redirect'] = 'vote-result/' . $form_state['values']['voter_name']. '/' . $form_state['values']['select_event'] . '/' . $form_state['values']['select_city'];
+  db_insert('sz_test_results')
+  ->fields(array(
+    'name' =>  $form_state['values']['voter_name'],
+    'email' => $form_state['values']['voter_email'],
+    'city' => $form_state['values']['select_city'],
+    'event' => $form_state['values']['select_event'],
+    'ip_address' => $_SERVER['REMOTE_ADDR']
+  ))
+    ->execute();
+
+}
+
+/**
+ * Validate the incoming form values.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function sz_test_vote_form_validate($form, &$form_state) {
+
+  if($form_state['values']['select_event'] == "0") {
+    form_set_error('select_event', t('Event is required.'));
+  }
+
+  if($form_state['values']['select_city'] == "0") {
+    form_set_error('select_city', t('City is required.'));
+  }
+
+  if (($form_state['values']['voter_email'] != NULL) && (!filter_var($form_state['values']['voter_email'],  FILTER_VALIDATE_EMAIL))) {
+    form_set_error('voter-email', t('The email address ' .$form_state['values']['voter_email'] . ' is invalid. Please enter a valid email.' ));
+  }
+
+}
+
+/**
+ * For enabling the rest of the form once the event has been selected.
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
+function sz_test_get_cities($form, $form_state) {
+  // Return the dropdown list including the wrapper
+  return $form['ajax']['wrapper'];
+}
+
+/**
+ * Get the details of the vote and pss them to the template.
+ *
+ * @param $name
+ * @param $event
+ * @param $city
+ * @return string
+ * @throws \Exception
+ */
+function sz_test_vote_result($name, $event, $city) {
+
+  $output = array(
+    'name' => $name,
+    'city' => $city,
+    'event' => $event,
+    'results' => _sz_test_get_results($event),
+  );
+
+  return theme('sz_test', array('results' => $output));
+
+}
+
+/**
+ * Declare the theme / template
+ *
+ * @return array
+ */
+function sz_test_theme() {
+
+  return array(
+    'sz_test' => array (
+      'template' => 'vote-results',
+      'path' => drupal_get_path('module', 'sz_test') . '/templates/custom',
+      'variables' => array(
+        'results' => NULL,
+      ),
+    ),
+  );
+
+}
+
+/**
+ * Get the current standings from the sz_test_results table.
+ *
+ * @param $event
+ * @return mixed
+ */
+function _sz_test_get_results($event) {
+
+  $results = db_query("SELECT city,COUNT(*) as total from {sz_test_results} WHERE event = :EVENT  GROUP BY city ORDER BY total DESC", array(':EVENT' => $event));
+  foreach($results as $row) {
+    $result[$row->city] = $row->total;
+
+  }
+  return $result;
+
+
+}
+
+// end

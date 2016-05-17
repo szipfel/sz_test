@@ -1,0 +1,54 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function sz_test_schema() {
+
+  $schema = array();
+
+  $schema['sz_test_results'] = array(
+    'description' => 'Main table for storing individual votes.',
+    'fields' => array(
+      'ltid' => array(
+        'description' => 'primary key.',
+        'type' => 'serial',
+        'length' => 11,
+        'not null' => FALSE,
+      ),
+      'name' => array(
+        'description' => 'Voters name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'email' => array(
+        'description' => 'Voters name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'city' => array(
+        'description' => 'City voted for.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ),
+      'event' => array(
+        'description' => 'The even voting on.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'ip_address' => array(
+        'description' => 'IP address of the voter.',
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('ltid'),
+  );
+
+  return $schema;
+}
+// end

@@ -1,0 +1,9 @@
+name =  Steve Zipfel's test module
+description = Module for providing as sample code without client data or specific code
+core = 7.x
+package = Steve Zipfel
+
+
+stylesheets[all][] = assets/css/sz_test.css
+
+scripts[] = assets/js/sz_test.js
