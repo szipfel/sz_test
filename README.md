@@ -1,4 +1,4 @@
-![alt text](http://webrepublic.ca/assets/logo.png "Web Republic Corp")
+![alt text](http://webrepublic.ca/assets/logo-sm.png "Web Republic Corp")
 # Steve Zipfel Sample Code - Drupal module
 
 This is a basic drupal 7 module that pulls bands and songs from a RESTFul JSON web service
