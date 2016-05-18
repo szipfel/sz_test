@@ -4,7 +4,7 @@
  * Class WebServiceSync
  *
  * This Class is for connecting to an available web service (URL set in the sz_test modules /admin/conf/sz_test/settings) to get the
- * JSON, and process it into events and cities related to the events.
+ * JSON, and process it into baznds and songs related to the bands.
  *
  * Author: Steve Zipfel
  * Email: steve@webrepublic.ca
@@ -19,46 +19,46 @@ class WebService {
    */
 
   /**
-   * Get the events from the JSON and return them as an array
+   * Get the bands from the JSON and return them as an array
    *
    * @return mixed
    */
-  public function get_events() {
+  public function get_bands() {
     // if we have cached results, let's use them.
-    $cache = cache_get('sz_events_cache');
+    $cache = cache_get('sz_bands_cache');
     if(isset($cache->data)) {
       return $cache->data;
     }
 
-    $events[0] = t('Choose an event'); // Default select value.
+    $bands[0] = t('Choose a band'); // Default select value.
     $data = self::process_json();
     foreach ($data as $key => $value) {
-      $events[$key] = $key;
+      $bands[$key] = $key;
     }
 
-    cache_set('sz_events_cache', $events); // cache the values.
-    return $events;
+    cache_set('sz_bands_cache', $bands); // cache the values.
+    return $bands;
   }
 
   /**
-   * Get the cities associated with an event and return as array
+   * Get the songs associated with a band and return as array
    *
-   * @param $event
+   * @param $band
    * @return mixed
    */
-  public function get_cities($event) {
+  public function get_songs($band) {
     // load up the cached versions.
-    $cache = cache_get('sz_cities_cache');
+    $cache = cache_get('sz_songs_cache_' . $band);
     if(isset($cache->data)){
       return $cache->data;
     }
-    $cities[0] = t('Choose a city');
+    $songs[0] = t('Choose a song');
     $data = self::process_json();
-    foreach ($data[$event] as $key => $city) {
-      $cities[$city] = $data[$event][$key];
+    foreach ($data[$band] as $key => $song) {
+      $songs[$song] = $data[$band][$key];
     }
-    cache_set('sz_cities_cache', $cities); // cache the values.
-    return $cities;
+    cache_set('sz_songs_cache_' . $band, $songs); // cache the values.
+    return $songs;
   }
 
   /**
@@ -67,7 +67,7 @@ class WebService {
    * @return array|bool
    */
   public function process_json() {
-    $file_location = variable_get('sz_test_cities_api_location', NULL); // this is set @ admin/config/sz_test/settings/
+    $file_location = variable_get('sz_test_songs_api_location', NULL); // this is set @ admin/config/sz_test/settings/
     // Check to see if this data is already cached. If is it return it.
     $cache = cache_get('sz_external_data');
     if (isset($cache->data)) {
@@ -93,12 +93,12 @@ class WebService {
     $data = array();
     $file_data = json_decode($file, true);
     /* covert all keys to be lowercase in case data changes case we don't get anything we don't expect.
-     * Change the structure to use the event name as the key in order to make it easier to parse the
-     * associated cities
+     * Change the structure to use the band name as the key in order to make it easier to parse the
+     * associated songs
      */
     if(!empty($file_data)) {
       foreach ($file_data as $value) {
-        $data[$value['name']] = array_change_key_case($value['cities'], CASE_LOWER);
+        $data[$value['name']] = array_change_key_case($value['songs'], CASE_LOWER);
       }
     } else {
       return FALSE;

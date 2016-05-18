@@ -27,14 +27,14 @@ function sz_test_schema() {
         'length' => 255,
         'not null' => FALSE,
       ),
-      'city' => array(
-        'description' => 'City voted for.',
+      'song' => array(
+        'description' => 'Song voted for.',
         'type' => 'varchar',
         'length' => 50,
         'not null' => FALSE,
       ),
-      'event' => array(
-        'description' => 'The even voting on.',
+      'band' => array(
+        'description' => 'The band voting on.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => FALSE,

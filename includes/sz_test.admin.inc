@@ -5,11 +5,11 @@
 
 function sz_test_admin_form($form, &$form_state) {
 
-  $form['cities_api_location'] = array(
+  $form['songs_api_location'] = array(
     '#type' => 'textfield',
-    '#title' => t('Cities API URL'),
-    '#description' => t('The URL for the cities rest API'),
-    '#default_value' => variable_get('sz_test_cities_api_location', 'http://webrepublic.ca/citylist.json'),
+    '#title' => t('Songs API URL'),
+    '#description' => t('The URL for the songs rest API'),
+    '#default_value' => variable_get('sz_test_songs_api_location', 'http://webrepublic.ca/songlist.json'),
     '#required' => TRUE,
   );
 
@@ -38,8 +38,8 @@ function sz_test_admin_form($form, &$form_state) {
 function sz_test_admin_form_submit($form, &$form_state) {
 
   // make sure it's a valid URL:
-  if (!filter_var( $form_state['values']['cities_api_location'], FILTER_VALIDATE_URL) === false) {
-    variable_set('sz_test_cities_api_location', $form_state['values']['cities_api_location']);
+  if (!filter_var( $form_state['values']['songs_api_location'], FILTER_VALIDATE_URL) === false) {
+    variable_set('sz_test_songs_api_location', $form_state['values']['songs_api_location']);
   } else {
     drupal_set_message(t('Not a valid URL'), 'error');
   }

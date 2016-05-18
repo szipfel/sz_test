@@ -1,11 +1,11 @@
 <?php
 /**
- * This is the template used for displaying the results after the user has voted. 
+ * This is the template used for displaying the results after the user has voted.
  */
 ?>
-<p>You voted for next year's <?php print $variables['results']['event'];?> to take place in <?php print $variables['results']['city']?></p>
+<p><?php print t('You voted for ' . $variables['results']['song'] . ' from ' . $variables['results']['band']);?></p>
 
-<p>Here are the current rankings for <?php print $variables['results']['event'];?></p>
+<p>Here are the current rankings for <?php print $variables['results']['band'];?></p>
 <ol>
 <?php
 

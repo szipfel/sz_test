@@ -34,8 +34,8 @@ function sz_test_menu() {
 
 
   $items['vote'] = array(
-    'title' => t('Vote for Next Year\'s Event'),
-    'description' => t('Vote for next year\'s event form'),
+    'title' => t('Vote for a bands best song'),
+    'description' => t('Vote for a bands best song form'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sz_test_vote_form'),
     'access arguments' =>  array('access content')
@@ -71,23 +71,22 @@ function sz_test_vote_result_get_title($name) {
  */
 function sz_test_vote_form($form, &$form_state) {
 
-  //setup the webservice class to get the events and cities when required
+  //setup the webservice class to get the bands and songs when required
   include_once(drupal_get_path('module', 'sz_test') . '/tools/rest.php');
   $web_service = new WebService();
-  $events = $web_service->get_events();
+  $bands = $web_service->get_bands();
   $access = FALSE;
 
-  $form['select_event'] = array(
+  $form['select_band'] = array(
     '#type' => 'select',
-    '#title' => t('Select an event'),
-    //'#description' => t('Select an event'),
-    '#options' => $events,
+    '#title' => t('Select a band'),
+    '#options' => $bands,
     '#ajax' => array(
       'event'=>'change',
-      'callback' =>'sz_test_get_cities',
+      'callback' =>'sz_test_get_songs',
       'wrapper' => 'form-wrapper',
     ),
-    '#default_value' => t('Choose an event'),
+    '#default_value' => t('Choose an band'),
     '#required' => TRUE,
   );
 
@@ -97,18 +96,18 @@ function sz_test_vote_form($form, &$form_state) {
     '#suffix' => '</div>',
   );
 
-  $cities = array(t('Choose a city'));
-  if (isset($form_state['values']['select_event'])) {
-    $cities = $web_service->get_cities($form_state['values']['select_event']);
+  $songs = array(t('Choose a song'));
+  if (isset($form_state['values']['select_band'])) {
+    $songs = $web_service->get_songs($form_state['values']['select_band']);
     $access = TRUE;
   }
 
-  $form['ajax']['wrapper']['select_city'] = array(
-    '#title' => t('City'),
+  $form['ajax']['wrapper']['select_song'] = array(
+    '#title' => t('Song'),
     '#type' => 'select',
     '#access' => $access,
-    '#options' => $cities,
-    '#default_value' => t('Choose a city'),
+    '#options' => $songs,
+    '#default_value' => t('Choose a song'),
     '#required' => TRUE,
   );
 
@@ -146,13 +145,13 @@ function sz_test_vote_form($form, &$form_state) {
  */
 function sz_test_vote_form_submit($form, &$form_state) {
 
-  $form_state['redirect'] = 'vote-result/' . $form_state['values']['voter_name']. '/' . $form_state['values']['select_event'] . '/' . $form_state['values']['select_city'];
+  $form_state['redirect'] = 'vote-result/' . $form_state['values']['voter_name']. '/' . $form_state['values']['select_band'] . '/' . $form_state['values']['select_song'];
   db_insert('sz_test_results')
   ->fields(array(
     'name' =>  $form_state['values']['voter_name'],
     'email' => $form_state['values']['voter_email'],
-    'city' => $form_state['values']['select_city'],
-    'event' => $form_state['values']['select_event'],
+    'song' => $form_state['values']['select_song'],
+    'band' => $form_state['values']['select_band'],
     'ip_address' => $_SERVER['REMOTE_ADDR']
   ))
     ->execute();
@@ -167,12 +166,12 @@ function sz_test_vote_form_submit($form, &$form_state) {
  */
 function sz_test_vote_form_validate($form, &$form_state) {
 
-  if($form_state['values']['select_event'] == "0") {
-    form_set_error('select_event', t('Event is required.'));
+  if($form_state['values']['select_band'] == "0") {
+    form_set_error('select_band', t('Band is required.'));
   }
 
-  if($form_state['values']['select_city'] == "0") {
-    form_set_error('select_city', t('City is required.'));
+  if($form_state['values']['select_song'] == "0") {
+    form_set_error('select_song', t('Song is required.'));
   }
 
   if (($form_state['values']['voter_email'] != NULL) && (!filter_var($form_state['values']['voter_email'],  FILTER_VALIDATE_EMAIL))) {
@@ -182,13 +181,13 @@ function sz_test_vote_form_validate($form, &$form_state) {
 }
 
 /**
- * For enabling the rest of the form once the event has been selected.
+ * For enabling the rest of the form once the band has been selected.
  *
  * @param $form
  * @param $form_state
  * @return mixed
  */
-function sz_test_get_cities($form, $form_state) {
+function sz_test_get_songs($form, $form_state) {
   // Return the dropdown list including the wrapper
   return $form['ajax']['wrapper'];
 }
@@ -197,18 +196,18 @@ function sz_test_get_cities($form, $form_state) {
  * Get the details of the vote and pss them to the template.
  *
  * @param $name
- * @param $event
- * @param $city
+ * @param $band
+ * @param $song
  * @return string
  * @throws \Exception
  */
-function sz_test_vote_result($name, $event, $city) {
+function sz_test_vote_result($name, $band, $song) {
 
   $output = array(
     'name' => $name,
-    'city' => $city,
-    'event' => $event,
-    'results' => _sz_test_get_results($event),
+    'song' => $song,
+    'band' => $band,
+    'results' => _sz_test_get_results($band),
   );
 
   return theme('sz_test', array('results' => $output));
@@ -237,14 +236,14 @@ function sz_test_theme() {
 /**
  * Get the current standings from the sz_test_results table.
  *
- * @param $event
+ * @param $band
  * @return mixed
  */
-function _sz_test_get_results($event) {
+function _sz_test_get_results($band) {
 
-  $results = db_query("SELECT city,COUNT(*) as total from {sz_test_results} WHERE event = :EVENT  GROUP BY city ORDER BY total DESC", array(':EVENT' => $event));
+  $results = db_query("SELECT song,COUNT(*) as total from {sz_test_results} WHERE band = :BAND  GROUP BY song ORDER BY total DESC", array(':BAND' => $band));
   foreach($results as $row) {
-    $result[$row->city] = $row->total;
+    $result[$row->song] = $row->total;
 
   }
   return $result;

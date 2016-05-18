@@ -1,5 +1,5 @@
 name =  Steve Zipfel's test module
-description = Module for providing as sample code without client data or specific code
+description = Module for providing as sample code without client data or specific code - Vote for a bands best song from data provided from a web service.
 core = 7.x
 package = Steve Zipfel
 
