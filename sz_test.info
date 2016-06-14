@@ -3,6 +3,8 @@ description = Module for providing as sample code without client data or specifi
 core = 7.x
 package = Steve Zipfel
 
+files[] = test/test.test
+testing_api = 2.x
 
 stylesheets[all][] = assets/css/sz_test.css
 
